@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Code-Review+2: Ram Sateesh Talari <ramsateesh.talari@intl.att.com>
+Workflow+1: Ram Sateesh Talari <ramsateesh.talari@intl.att.com>
+Submitted-by: Jenkins
+Submitted-at: Mon, 16 Nov 2015 19:48:20 +0000
+Reviewed-on: https://review.openstack.org/245914
+Project: openstack/fuel-plugin-dbaas-trove
+Branch: refs/heads/master
