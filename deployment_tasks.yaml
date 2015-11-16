@@ -1,0 +1,38 @@
+# These tasks will be merged into deployment graph. Here you
+# can specify new tasks for any roles, even built-in ones.
+
+- id: fuel-plugin-dbaas-trove
+  type: group
+  role: [fuel-plugin-dbaas-trove]
+
+- id: fuel-plugin-dbaas-trove-deployment-puppet
+  type: puppet
+  groups: [fuel-plugin-dbaas-trove]
+  required_for: [deploy_end]
+  requires: [deploy_start]
+  parameters:
+    puppet_manifest: "deploy.pp"
+    puppet_modules: ""
+    timeout: 3600
+
+#- id: fuel-plugin-dbaas-trove-post-deployment-sh
+#  type: shell
+#  role: [fuel-plugin-dbaas-trove]
+#  required_for: [post_deployment_end]
+#  requires: [post_deployment_start]
+#  parameters:
+#    cmd: echo post_deployment_task_executed > /tmp/post_deployment
+#    retries: 3
+#    interval: 20
+#    timeout: 180
+
+#- id: fuel-plugin-dbaas-trove-pre-deployment-sh
+#  type: shell
+#  role: [fuel-plugin-dbaas-trove]
+#  required_for: [pre_deployment_end]
+#  requires: [pre_deployment_start]
+#  parameters:
+#    cmd: echo pre_deployment_task_executed > /tmp/pre_deployment
+#    retries: 3
+#    interval: 20
+#    timeout: 180
