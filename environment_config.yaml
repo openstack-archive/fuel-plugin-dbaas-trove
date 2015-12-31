@@ -1,7 +1,11 @@
-attributes:
-  fuel-plugin-dbaas-trove_text:
-    value: 'Set default value'
-    label: 'Text field'
-    description: 'Description for text field'
-    weight: 25
-    type: "text"
+attributes: 
+  metadata: 
+    label: "Trove Service" 
+    weight: 90
+    db_password:
+      generator: "password"
+    user_password:
+      generator: "password"
+    rabbit_password:
+      generator: "password"
+    rabbit_user: "trove"
