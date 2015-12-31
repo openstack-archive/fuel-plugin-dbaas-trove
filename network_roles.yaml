@@ -1,15 +1,11 @@
 # Unique network role name
-- id: "example_net_role"
+- id: "trove/api"
   # Role mapping to network
-  default_mapping: "public"
+  default_mapping: "management"
   properties:
     # Should be true if network role requires subnet being set
     subnet: true
     # Should be true if network role requires gateway being set
-    gateway: false
+    gateway: true
     # List of VIPs to be allocated
-    vip:
-         # Unique VIP name
-       - name: "vip_name"
-         # Optional linux namespace for VIP
-         namespace: "haproxy"
+    vip: []

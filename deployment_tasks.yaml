@@ -1,38 +1,84 @@
 # These tasks will be merged into deployment graph. Here you
 # can specify new tasks for any roles, even built-in ones.
 
-- id: fuel-plugin-dbaas-trove
+- id: trove
   type: group
-  role: [fuel-plugin-dbaas-trove]
-
-- id: fuel-plugin-dbaas-trove-deployment-puppet
-  type: puppet
-  groups: [fuel-plugin-dbaas-trove]
-  required_for: [deploy_end]
+  role: [trove]
   requires: [deploy_start]
+  required_for: [deploy_end]
+  tasks: 
+    - fuel_pkgs
+    - hiera
+    - globals
+    - logging
+    - tools
+    - netconfig
+    - hosts
+    - firewall
   parameters:
-    puppet_manifest: "deploy.pp"
-    puppet_modules: ""
-    timeout: 3600
+    strategy:
+      type: parallel
 
-#- id: fuel-plugin-dbaas-trove-post-deployment-sh
-#  type: shell
-#  role: [fuel-plugin-dbaas-trove]
-#  required_for: [post_deployment_end]
-#  requires: [post_deployment_start]
-#  parameters:
-#    cmd: echo post_deployment_task_executed > /tmp/post_deployment
-#    retries: 3
-#    interval: 20
-#    timeout: 180
+- id: trove-haproxy
+  type: puppet
+  groups: ['primary-controller', 'controller']
+  required_for: [task-trove, deploy_end]
+  requires: [deploy_start, cluster-haproxy]
+  parameters:
+    puppet_manifest: puppet/manifests/haproxy.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 1800
 
-#- id: fuel-plugin-dbaas-trove-pre-deployment-sh
-#  type: shell
-#  role: [fuel-plugin-dbaas-trove]
-#  required_for: [pre_deployment_end]
-#  requires: [pre_deployment_start]
-#  parameters:
-#    cmd: echo pre_deployment_task_executed > /tmp/pre_deployment
-#    retries: 3
-#    interval: 20
-#    timeout: 180
+- id: task-trove-db
+  type: puppet
+  groups: ['primary-controller', 'controller']
+  required_for: [task-trove]
+  requires: [database]
+  parameters:
+    puppet_manifest: puppet/manifests/db.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 1800
+
+- id: trove-keystone
+  type: puppet
+  groups: ['primary-controller', 'controller']
+  required_for: [task-trove]
+  requires: [keystone]
+  parameters:
+    puppet_manifest: puppet/manifests/keystone.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 1800
+
+- id: task-trove
+  type: puppet
+  groups: [trove]
+  required_for: [deploy_end]
+  requires: [rabbitmq, trove-haproxy, task-trove-db, trove-keystone, task-rabbitmq]
+  parameters:
+    puppet_manifest: puppet/manifests/trove.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 1800
+
+##############################################
+# RabbitMQ and Cluster
+
+# Deployment tasks
+- id: task-rabbitmq
+  type: puppet
+  groups: [trove]
+  requires: [task-rabbitmq-cluster]
+  required_for: [task-trove]
+  parameters:
+    puppet_manifest: puppet/manifests/rabbitmq.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 1800
+
+- id: task-rabbitmq-cluster
+  type: puppet
+  groups: [trove]
+  requires: [hosts, firewall, deploy_start]
+  required_for: [task-rabbitmq]
+  parameters:
+    puppet_manifest: puppet/manifests/cluster.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 1800
