@@ -13,6 +13,8 @@
     - logging
     - tools
     - netconfig
+    - ssl-keys-saving
+    - ssl-add-trust-chain
     - hosts
     - firewall
   parameters:
