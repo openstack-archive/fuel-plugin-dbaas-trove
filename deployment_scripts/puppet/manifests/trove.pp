@@ -59,7 +59,7 @@ if $trove_hash['metadata']['enabled'] {
     rabbit_userid         => $trove_hash['metadata']['rabbit_user'],
     rabbit_use_ssl        => false,
     nova_proxy_admin_pass => $nova_hash['user_password'],
-	nova_proxy_admin_user => 'nova',
+    nova_proxy_admin_user => 'nova',
     nova_proxy_admin_tenant_name => pick($nova_hash['tenant_name'], 'services'),
   }
 
