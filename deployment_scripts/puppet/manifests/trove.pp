@@ -59,7 +59,7 @@ if $trove_hash['metadata']['enabled'] {
     rabbit_userid         => $trove_hash['metadata']['rabbit_user'],
     rabbit_use_ssl        => false,
     nova_proxy_admin_pass => $nova_hash['user_password'],
-	nova_proxy_admin_user => 'nova',
+    nova_proxy_admin_user => 'nova',
     nova_proxy_admin_tenant_name => pick($nova_hash['tenant_name'], 'services'),
   }
 
@@ -82,7 +82,7 @@ if $trove_hash['metadata']['enabled'] {
     verbose           => true,
     auth_url          => "http://${service_endpoint}:5000/v2.0/",
   }
-  
+
   firewall { $firewall_rule :
     dport  => $api_bind_port,
     proto  => 'tcp',
