@@ -1,0 +1,10 @@
+Code-Review+1: Shaik Apsar <shaik.apsar@hotmail.com>
+Code-Review+1: Bhaskar Duvvuri <bhaskara.duvvuri@intl.att.com>
+Code-Review+2: Ram Sateesh Talari <ramsateesh.talari@intl.att.com>
+Workflow+1: Ram Sateesh Talari <ramsateesh.talari@intl.att.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Thu, 02 Jun 2016 09:08:45 +0000
+Reviewed-on: https://review.openstack.org/300102
+Project: openstack/fuel-plugin-dbaas-trove
+Branch: refs/heads/master
