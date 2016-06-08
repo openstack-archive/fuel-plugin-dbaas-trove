@@ -1,0 +1,5 @@
+.tox
+.build
+*.pyc
+*.rpm
+repositories/ubuntu/*.deb
