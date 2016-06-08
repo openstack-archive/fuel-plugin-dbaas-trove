@@ -27,7 +27,13 @@ describe 'trove::taskmanager' do
 
       let :pre_condition do
         "class { 'trove':
-         nova_proxy_admin_pass => 'verysecrete'}"
+         nova_proxy_admin_pass     => 'verysecrete',
+         os_region_name            => 'RegionOne',
+         nova_compute_service_type => 'compute',
+         cinder_service_type       => 'volume',
+         swift_service_type        => 'object-store',
+         heat_service_type         => 'orchestration',
+         neutron_service_type      => 'network'}"
       end
 
       it 'installs trove-taskmanager package and service' do
@@ -50,6 +56,31 @@ describe 'trove::taskmanager' do
         is_expected.to contain_trove_taskmanager_config('DEFAULT/nova_proxy_admin_user').with_value('admin')
         is_expected.to contain_trove_taskmanager_config('DEFAULT/nova_proxy_admin_pass').with_value('verysecrete')
         is_expected.to contain_trove_taskmanager_config('DEFAULT/nova_proxy_admin_tenant_name').with_value('admin')
+        is_expected.to contain_trove_taskmanager_config('DEFAULT/default_neutron_networks').with_value(nil)
+        is_expected.to contain_trove_config('DEFAULT/default_neutron_networks').with_value(nil)
+        is_expected.to contain_trove_taskmanager_config('DEFAULT/os_region_name').with_value('RegionOne')
+        is_expected.to contain_trove_taskmanager_config('DEFAULT/nova_compute_service_type').with_value('compute')
+        is_expected.to contain_trove_taskmanager_config('DEFAULT/cinder_service_type').with_value('volume')
+        is_expected.to contain_trove_taskmanager_config('DEFAULT/swift_service_type').with_value('object-store')
+        is_expected.to contain_trove_taskmanager_config('DEFAULT/heat_service_type').with_value('orchestration')
+        is_expected.to contain_trove_taskmanager_config('DEFAULT/neutron_service_type').with_value('network')
+        is_expected.to contain_trove_config('DEFAULT/taskmanager_queue').with_value('taskmanager')
+        is_expected.to contain_file('/etc/trove/trove-guestagent.conf')
+      end
+
+      context 'when set use_guestagent_template to false' do
+        let :pre_condition do
+           "class { 'trove':
+              nova_proxy_admin_pass => 'verysecrete',}
+            class { 'trove::taskmanager':
+              use_guestagent_template => false,}"
+        end
+        it 'configures trove-taskmanager with trove::guestagent' do
+          is_expected.to contain_class('trove::guestagent').with(
+            :enabled         => false,
+            :manage_service  => false,
+          )
+        end
       end
 
       context 'when using a single RabbitMQ server' do
@@ -60,6 +91,23 @@ describe 'trove::taskmanager' do
         end
         it 'configures trove-taskmanager with RabbitMQ' do
           is_expected.to contain_trove_taskmanager_config('oslo_messaging_rabbit/rabbit_host').with_value('10.0.0.1')
+          is_expected.to contain_trove_taskmanager_config('oslo_messaging_rabbit/rabbit_ha_queues').with_value('false')
+          is_expected.to contain_trove_taskmanager_config('oslo_messaging_rabbit/amqp_durable_queues').with_value('false')
+        end
+      end
+
+      context 'when using a single RabbitMQ server with enable ha options' do
+        let :pre_condition do
+          "class { 'trove':
+             nova_proxy_admin_pass => 'verysecrete',
+             rabbit_ha_queues      => 'true',
+             amqp_durable_queues   => 'true'
+             rabbit_host           => '10.0.0.1'}"
+        end
+        it 'configures trove-api with RabbitMQ' do
+          is_expected.to contain_trove_taskmanager_config('oslo_messaging_rabbit/rabbit_host').with_value('10.0.0.1')
+          is_expected.to contain_trove_taskmanager_config('oslo_messaging_rabbit/rabbit_ha_queues').with_value('true')
+          is_expected.to contain_trove_taskmanager_config('oslo_messaging_rabbit/amqp_durable_queues').with_value('true')
         end
       end
 
@@ -71,6 +119,44 @@ describe 'trove::taskmanager' do
         end
         it 'configures trove-taskmanager with RabbitMQ' do
           is_expected.to contain_trove_taskmanager_config('oslo_messaging_rabbit/rabbit_hosts').with_value(['10.0.0.1,10.0.0.2'])
+          is_expected.to contain_trove_taskmanager_config('oslo_messaging_rabbit/rabbit_ha_queues').with_value('true')
+        end
+      end
+
+      context 'when using qpid' do
+        let :pre_condition do
+          "class { 'trove':
+             nova_proxy_admin_pass => 'verysecrete',
+             rpc_backend           => 'qpid',
+             qpid_hostname         => '10.0.0.1',
+             qpid_username         => 'guest',
+             qpid_password         => 'password'}"
+        end
+        it 'configures trove-taskmanager with qpid' do
+          is_expected.to contain_trove_taskmanager_config('DEFAULT/rpc_backend').with_value('qpid')
+          is_expected.to contain_trove_taskmanager_config('oslo_messaging_qpid/qpid_hostname').with_value('10.0.0.1')
+          is_expected.to contain_trove_taskmanager_config('oslo_messaging_qpid/qpid_username').with_value('guest')
+          is_expected.to contain_trove_taskmanager_config('oslo_messaging_qpid/qpid_password').with_value('password')
+          is_expected.to contain_trove_taskmanager_config('oslo_messaging_qpid/qpid_protocol').with_value('tcp')
+        end
+      end
+
+      context 'when using qpid with SSL enabled' do
+        let :pre_condition do
+          "class { 'trove':
+             nova_proxy_admin_pass => 'verysecrete',
+             rpc_backend           => 'qpid',
+             qpid_hostname         => '10.0.0.1',
+             qpid_username         => 'guest',
+             qpid_password         => 'password',
+             qpid_protocol         => 'ssl'}"
+        end
+        it 'configures trove-taskmanager with qpid' do
+          is_expected.to contain_trove_taskmanager_config('DEFAULT/rpc_backend').with_value('qpid')
+          is_expected.to contain_trove_taskmanager_config('oslo_messaging_qpid/qpid_hostname').with_value('10.0.0.1')
+          is_expected.to contain_trove_taskmanager_config('oslo_messaging_qpid/qpid_username').with_value('guest')
+          is_expected.to contain_trove_taskmanager_config('oslo_messaging_qpid/qpid_password').with_value('password')
+          is_expected.to contain_trove_taskmanager_config('oslo_messaging_qpid/qpid_protocol').with_value('ssl')
         end
       end
 
@@ -88,12 +174,18 @@ describe 'trove::taskmanager' do
       context 'when using Neutron' do
         let :pre_condition do
           "class { 'trove':
-             nova_proxy_admin_pass => 'verysecrete',
-             use_neutron           => true}"
+             nova_proxy_admin_pass    => 'verysecrete',
+             use_neutron              => true}
+           class { 'trove::taskmanager':
+             default_neutron_networks => 'trove_service',
+           }
+          "
 
         end
 
         it 'configures trove to use the Neutron network driver' do
+          is_expected.to contain_trove_config('DEFAULT/default_neutron_networks').with_value('trove_service')
+          is_expected.to contain_trove_taskmanager_config('DEFAULT/default_neutron_networks').with_value('trove_service')
           is_expected.to contain_trove_config('DEFAULT/network_driver').with_value('trove.network.neutron.NeutronDriver')
           is_expected.to contain_trove_taskmanager_config('DEFAULT/network_driver').with_value('trove.network.neutron.NeutronDriver')
 

@@ -1,3 +1,25 @@
 #!/bin/bash
 
-# Nothing here
+# Add here any the actions which are required before plugin build
+# like packages building, packages downloading from mirrors and so on.
+# The script should return 0 if there were no errors.
+
+set -eux
+
+. "$(dirname "$(readlink -f "$0")")"/functions.sh
+
+
+# Packages needed for OpenStack Trove services from stable/liberty.
+download_package http://ubuntu-cloud.archive.canonical.com/ubuntu/pool/main/o/openstack-trove/trove-taskmanager_4.0.0-0ubuntu1~cloud0_all.deb \
+http://ubuntu-cloud.archive.canonical.com/ubuntu/pool/main/o/openstack-trove/trove-guestagent_4.0.0-0ubuntu1~cloud0_all.deb \
+http://ubuntu-cloud.archive.canonical.com/ubuntu/pool/main/o/openstack-trove/trove-conductor_4.0.0-0ubuntu1~cloud0_all.deb \
+http://ubuntu-cloud.archive.canonical.com/ubuntu/pool/main/o/openstack-trove/trove-common_4.0.0-0ubuntu1~cloud0_all.deb \
+http://ubuntu-cloud.archive.canonical.com/ubuntu/pool/main/o/openstack-trove/trove-api_4.0.0-0ubuntu1~cloud0_all.deb \
+http://ubuntu-cloud.archive.canonical.com/ubuntu/pool/main/o/openstack-trove/python-trove_4.0.0-0ubuntu1~cloud0_all.deb
+
+
+# Puppet modules needed for OpenStack Trove services from stable/liberty.
+#TROVE_REF="stable/liberty"
+#TROVE_TARBALL_URL="https://github.com/openstack/puppet-trove/archive/${TROVE_REF}.tar.gz"
+
+#download_puppet_module "trove" ${TROVE_TARBALL_URL}
