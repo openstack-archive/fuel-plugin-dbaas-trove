@@ -1,0 +1,14 @@
+# This file contains wizard components descriptions that are pretty similar to
+# the `environment_config.yaml`.
+# Please, take a look at following link for the details:
+# - https://blueprints.launchpad.net/fuel/+spec/component-registry
+# - https://specs.openstack.org/openstack/fuel-specs/specs/8.0/component-registry.html
+
+- name: additional_service:fuel-plugin-dbaas-trove
+  compatible: []
+  requires: []
+  incompatible: []
+  label: "Install Trove"
+  description: |
+      Trove provides scalable and reliable cloud Database as a Service provisioning
+       functionality for both relational and non-relational database engines.
