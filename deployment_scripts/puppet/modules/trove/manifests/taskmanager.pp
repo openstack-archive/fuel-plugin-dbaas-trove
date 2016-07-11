@@ -69,21 +69,36 @@
 #
 # [*guestagent_config_file*]
 #   (optional) Trove guest agent configuration file.
-#   Defaults to '/etc/trove/trove-guestmanager.conf'.
+#   Defaults to '/etc/trove/trove-guestagent.conf'.
+#
+# [*use_guestagent_template*]
+#   (optional) Use template to provision trove guest agent configuration file.
+#   Defaults to true.
+#
+# [*default_neutron_networks*]
+#   (optional) The network that trove will attach by default.
+#   Defaults to undef.
+#
+# [*taskmanager_queue*]
+#   (optional) Message queue name the Taskmanager will listen to.
+#   Defaults to 'taskmanager'.
 #
 class trove::taskmanager(
-  $enabled                = true,
-  $manage_service         = true,
-  $debug                  = false,
-  $verbose                = false,
-  $log_file               = '/var/log/trove/trove-taskmanager.log',
-  $log_dir                = '/var/log/trove',
-  $use_syslog             = false,
-  $log_facility           = 'LOG_USER',
-  $auth_url               = 'http://localhost:5000/v2.0',
-  $heat_url               = false,
-  $ensure_package         = 'present',
-  $guestagent_config_file = '/etc/trove/trove-guestmanager.conf'
+  $enabled                  = true,
+  $manage_service           = true,
+  $debug                    = false,
+  $verbose                  = false,
+  $log_file                 = '/var/log/trove/trove-taskmanager.log',
+  $log_dir                  = '/var/log/trove',
+  $use_syslog               = false,
+  $log_facility             = 'LOG_USER',
+  $auth_url                 = 'http://localhost:5000/v2.0',
+  $heat_url                 = false,
+  $ensure_package           = 'present',
+  $guestagent_config_file   = '/etc/trove/trove-guestagent.conf',
+  $use_guestagent_template  = true,
+  $default_neutron_networks = undef,
+  $taskmanager_queue        = 'taskmanager',
 ) inherits trove {
 
   include ::trove::params
@@ -117,28 +132,60 @@ class trove::taskmanager(
     'DEFAULT/nova_proxy_admin_user':        value => $::trove::nova_proxy_admin_user;
     'DEFAULT/nova_proxy_admin_pass':        value => $::trove::nova_proxy_admin_pass;
     'DEFAULT/nova_proxy_admin_tenant_name': value => $::trove::nova_proxy_admin_tenant_name;
+    'DEFAULT/rpc_backend':                  value => $::trove::rpc_backend;
   }
 
-  if $::trove::rpc_backend == 'trove.openstack.common.rpc.impl_kombu' {
+  trove_config {
+    'DEFAULT/taskmanager_queue':   value => $taskmanager_queue;
+  }
+
+  # region name
+  if $::trove::os_region_name {
+    trove_taskmanager_config { 'DEFAULT/os_region_name': value => $::trove::os_region_name }
+  }
+  else {
+    trove_taskmanager_config {'DEFAULT/os_region_name': ensure => absent }
+  }
+
+  # services type
+  trove_taskmanager_config {
+    'DEFAULT/nova_compute_service_type': value => $::trove::nova_compute_service_type;
+    'DEFAULT/cinder_service_type':       value => $::trove::cinder_service_type;
+    'DEFAULT/neutron_service_type':      value => $::trove::neutron_service_type;
+    'DEFAULT/swift_service_type':        value => $::trove::swift_service_type;
+    'DEFAULT/heat_service_type':         value => $::trove::heat_service_type;
+  }
+
+  if $::trove::rpc_backend == 'trove.openstack.common.rpc.impl_kombu' or $::trove::rpc_backend == 'rabbit'{
     if ! $::trove::rabbit_password {
       fail('When rpc_backend is rabbitmq, you must set rabbit password')
     }
     if $::trove::rabbit_hosts {
-      trove_taskmanager_config { 'oslo_messaging_rabbit/rabbit_hosts':     value  => join($::trove::rabbit_hosts, ',') }
-      trove_taskmanager_config { 'oslo_messaging_rabbit/rabbit_ha_queues': value  => true }
+      trove_taskmanager_config { 'oslo_messaging_rabbit/rabbit_hosts':     value  => $::trove::rabbit_hosts }
     } else  {
       trove_taskmanager_config { 'oslo_messaging_rabbit/rabbit_host':      value => $::trove::rabbit_host }
       trove_taskmanager_config { 'oslo_messaging_rabbit/rabbit_port':      value => $::trove::rabbit_port }
       trove_taskmanager_config { 'oslo_messaging_rabbit/rabbit_hosts':     value => "${::trove::rabbit_host}:${::trove::rabbit_port}" }
-      trove_taskmanager_config { 'oslo_messaging_rabbit/rabbit_ha_queues': value => false }
+    }
+
+    if $::trove::rabbit_ha_queues == undef {
+      if size($::trove::rabbit_hosts) > 1 {
+        trove_taskmanager_config { 'oslo_messaging_rabbit/rabbit_ha_queues': value  => true }
+      } else {
+        trove_taskmanager_config { 'oslo_messaging_rabbit/rabbit_ha_queues': value => false }
+      }
+    } else {
+      trove_taskmanager_config { 'oslo_messaging_rabbit/rabbit_ha_queues': value => $::trove::rabbit_ha_queues }
     }
 
     trove_taskmanager_config {
-      'oslo_messaging_rabbit/rabbit_userid':         value => $::trove::rabbit_user;
+      'oslo_messaging_rabbit/rabbit_userid':         value => $::trove::rabbit_userid;
       'oslo_messaging_rabbit/rabbit_password':       value => $::trove::rabbit_password, secret => true;
       'oslo_messaging_rabbit/rabbit_virtual_host':   value => $::trove::rabbit_virtual_host;
       'oslo_messaging_rabbit/rabbit_use_ssl':        value => $::trove::rabbit_use_ssl;
       'oslo_messaging_rabbit/kombu_reconnect_delay': value => $::trove::kombu_reconnect_delay;
+      # TODO(shaikapsar): remove the below lines once bug/1486319 merged to stable/liberty.
+      'oslo_messaging_rabbit/amqp_durable_queues':   value => $::trove::amqp_durable_queues;
     }
 
     if $::trove::rabbit_use_ssl {
@@ -177,19 +224,22 @@ class trove::taskmanager(
     }
   }
 
-  if $::trove::rpc_backend == 'trove.openstack.common.rpc.impl_qpid' {
+  if $::trove::rpc_backend == 'trove.openstack.common.rpc.impl_qpid' or $::trove::rpc_backend == 'qpid'{
+
+    warning('Qpid driver is removed from Oslo.messaging in the Mitaka release')
+
     trove_taskmanager_config {
-      'DEFAULT/qpid_hostname':               value => $::trove::qpid_hostname;
-      'DEFAULT/qpid_port':                   value => $::trove::qpid_port;
-      'DEFAULT/qpid_username':               value => $::trove::qpid_username;
-      'DEFAULT/qpid_password':               value => $::trove::qpid_password, secret => true;
-      'DEFAULT/qpid_heartbeat':              value => $::trove::qpid_heartbeat;
-      'DEFAULT/qpid_protocol':               value => $::trove::qpid_protocol;
-      'DEFAULT/qpid_tcp_nodelay':            value => $::trove::qpid_tcp_nodelay;
+      'oslo_messaging_qpid/qpid_hostname':    value => $::trove::qpid_hostname;
+      'oslo_messaging_qpid/qpid_port':        value => $::trove::qpid_port;
+      'oslo_messaging_qpid/qpid_username':    value => $::trove::qpid_username;
+      'oslo_messaging_qpid/qpid_password':    value => $::trove::qpid_password, secret => true;
+      'oslo_messaging_qpid/qpid_heartbeat':   value => $::trove::qpid_heartbeat;
+      'oslo_messaging_qpid/qpid_protocol':    value => $::trove::qpid_protocol;
+      'oslo_messaging_qpid/qpid_tcp_nodelay': value => $::trove::qpid_tcp_nodelay;
     }
     if is_array($::trove::qpid_sasl_mechanisms) {
       trove_taskmanager_config {
-        'DEFAULT/qpid_sasl_mechanisms': value => join($::trove::qpid_sasl_mechanisms, ' ');
+        'oslo_messaging_qpid/qpid_sasl_mechanisms': value => join($::trove::qpid_sasl_mechanisms, ' ');
       }
     }
   }
@@ -198,26 +248,26 @@ class trove::taskmanager(
     trove_config {
       'DEFAULT/network_label_regex':         value => '.*';
       'DEFAULT/network_driver':              value => 'trove.network.neutron.NeutronDriver';
+      'DEFAULT/default_neutron_networks':    value => $default_neutron_networks;
     }
 
     trove_taskmanager_config {
       'DEFAULT/network_label_regex':         value => '.*';
       'DEFAULT/network_driver':              value => 'trove.network.neutron.NeutronDriver';
+      'DEFAULT/default_neutron_networks':    value => $default_neutron_networks;
     }
   } else {
     trove_config {
       'DEFAULT/network_label_regex':         value => '^private$';
       'DEFAULT/network_driver':              value => 'trove.network.nova.NovaNetwork';
+      'DEFAULT/default_neutron_networks':    ensure => absent;
     }
 
     trove_taskmanager_config {
       'DEFAULT/network_label_regex':         value => '^private$';
       'DEFAULT/network_driver':              value => 'trove.network.nova.NovaNetwork';
+      'DEFAULT/default_neutron_networks':    ensure => absent;
     }
-  }
-
-  trove_config {
-    'DEFAULT/taskmanager_queue':             value => 'taskmanager';
   }
 
   # Logging
@@ -261,9 +311,13 @@ class trove::taskmanager(
     ensure_package => $ensure_package,
   }
 
+  # (shaikapsar): Remove ::trove::guestagent declaraion from here.
   if $guestagent_config_file {
-    file { $guestagent_config_file:
-      content => template('trove/trove-guestagent.conf.erb')
+    if $use_guestagent_template {
+      file { $guestagent_config_file:
+        content => template('trove/trove-guestagent.conf.erb'),
+        require => Package[$::trove::params::taskmanager_package_name]
+      }
     }
 
     trove_taskmanager_config {
