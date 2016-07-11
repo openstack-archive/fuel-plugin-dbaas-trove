@@ -119,6 +119,26 @@
 #   (optional) CA certificate file to use to verify connecting clients
 #   Defaults to false, not set
 #
+# [*http_get_rate*]
+#   (optional) Default rate limit of GET request.
+#   Defaults to 200.
+#
+# [*http_post_rate*]
+#   (optional) Default rate limit of POST request.
+#   Defaults to 200.
+#
+# [*http_put_rate*]
+#   (optional) Default rate limit of PUT request.
+#   Defaults to 200.
+#
+# [*http_delete_rate*]
+#   (optional) Default rate limit of DELETE request.
+#   Defaults to 200.
+#
+# [*http_mgmt_post_rate*]
+#   (optional) Default rate limit of mgmt post request.
+#   Defaults to 200.
+#
 class trove::api(
   $keystone_password,
   $verbose                      = false,
@@ -142,42 +162,22 @@ class trove::api(
   $cert_file                    = false,
   $key_file                     = false,
   $ca_file                      = false,
+  $http_get_rate                = 200,
+  $http_post_rate               = 200,
+  $http_put_rate                = 200,
+  $http_delete_rate             = 200,
+  $http_mgmt_post_rate          = 200,
   $manage_service               = true,
   $ensure_package               = 'present',
 ) inherits trove {
 
   require ::keystone::python
+  include ::trove::db
   include ::trove::params
 
   Trove_config<||> ~> Exec['post-trove_config']
   Trove_config<||> ~> Service['trove-api']
-  Package['trove-api'] -> Trove_api_paste_ini<||>
   Trove_api_paste_ini<||> ~> Service['trove-api']
-  # Trove db sync is broken in Ubuntu packaging
-  # This is a temporary fix until it's fixed in packaging.
-  # https://bugs.launchpad.net/ubuntu/+source/openstack-trove/+bug/1451134
-  file { '/etc/trove/trove.conf':
-    require => File['/etc/trove'],
-  }
-  File['/etc/trove/trove.conf'] -> Trove_config<||>
-  Trove_config<||> -> Package[$::trove::params::api_package_name]
-
-  if $::trove::database_connection {
-    if($::trove::database_connection =~ /mysql:\/\/\S+:\S+@\S+\/\S+/) {
-      require 'mysql::bindings'
-      require 'mysql::bindings::python'
-    } elsif($::trove::database_connection =~ /postgresql:\/\/\S+:\S+@\S+\/\S+/) {
-
-    } elsif($::trove::database_connection =~ /sqlite:\/\//) {
-
-    } else {
-      fail("Invalid db connection ${::trove::database_connection}")
-    }
-    trove_config {
-      'database/connection':   value => $::trove::database_connection;
-      'database/idle_timeout': value => $::trove::database_idle_timeoutl;
-    }
-  }
 
   # basic service config
   trove_config {
@@ -191,6 +191,7 @@ class trove::api(
     'DEFAULT/nova_proxy_admin_pass':        value => $::trove::nova_proxy_admin_pass;
     'DEFAULT/nova_proxy_admin_tenant_name': value => $::trove::nova_proxy_admin_tenant_name;
     'DEFAULT/control_exchange':             value => $::trove::control_exchange;
+    'DEFAULT/rpc_backend':                  value => $::trove::rpc_backend;
   }
 
   if $auth_url {
@@ -271,30 +272,66 @@ class trove::api(
     }
   }
 
+  # rate limits
+  trove_config {
+    'DEFAULT/http_get_rate':       value => $http_get_rate;
+    'DEFAULT/http_post_rate':      value => $http_post_rate;
+    'DEFAULT/http_put_rate':       value => $http_put_rate;
+    'DEFAULT/http_delete_rate':    value => $http_delete_rate;
+    'DEFAULT/http_mgmt_post_rate': value => $http_mgmt_post_rate;
+  }
+
   resources { 'trove_config':
     purge => $purge_config,
   }
 
-  if $::trove::rpc_backend == 'trove.openstack.common.rpc.impl_kombu' {
+  # region name
+  if $::trove::os_region_name {
+    trove_config { 'DEFAULT/os_region_name': value => $::trove::os_region_name }
+  }
+  else {
+    trove_config {'DEFAULT/os_region_name': ensure => absent }
+  }
+
+  # services type
+  trove_config {
+    'DEFAULT/nova_compute_service_type': value => $::trove::nova_compute_service_type;
+    'DEFAULT/cinder_service_type':       value => $::trove::cinder_service_type;
+    'DEFAULT/neutron_service_type':      value => $::trove::neutron_service_type;
+    'DEFAULT/swift_service_type':        value => $::trove::swift_service_type;
+    'DEFAULT/heat_service_type':         value => $::trove::heat_service_type;
+  }
+
+  if $::trove::rpc_backend == 'trove.openstack.common.rpc.impl_kombu' or $::trove::rpc_backend == 'rabbit' {
     if ! $::trove::rabbit_password {
       fail('When rpc_backend is rabbitmq, you must set rabbit password')
     }
     if $::trove::rabbit_hosts {
       trove_config { 'oslo_messaging_rabbit/rabbit_hosts':     value  => join($::trove::rabbit_hosts, ',') }
-      trove_config { 'oslo_messaging_rabbit/rabbit_ha_queues': value  => true }
     } else  {
       trove_config { 'oslo_messaging_rabbit/rabbit_host':      value => $::trove::rabbit_host }
       trove_config { 'oslo_messaging_rabbit/rabbit_port':      value => $::trove::rabbit_port }
       trove_config { 'oslo_messaging_rabbit/rabbit_hosts':     value => "${::trove::rabbit_host}:${::trove::rabbit_port}" }
-      trove_config { 'oslo_messaging_rabbit/rabbit_ha_queues': value => false }
+    }
+
+    if $::trove::rabbit_ha_queues == undef {
+      if size($::trove::rabbit_hosts) > 1 {
+        trove_config { 'oslo_messaging_rabbit/rabbit_ha_queues': value  => true }
+      } else {
+        trove_config { 'oslo_messaging_rabbit/rabbit_ha_queues': value => false }
+      }
+    } else {
+      trove_config { 'oslo_messaging_rabbit/rabbit_ha_queues': value => $::trove::rabbit_ha_queues }
     }
 
     trove_config {
-      'oslo_messaging_rabbit/rabbit_userid':         value => $::trove::rabbit_user;
+      'oslo_messaging_rabbit/rabbit_userid':         value => $::trove::rabbit_userid;
       'oslo_messaging_rabbit/rabbit_password':       value => $::trove::rabbit_password, secret => true;
       'oslo_messaging_rabbit/rabbit_virtual_host':   value => $::trove::rabbit_virtual_host;
       'oslo_messaging_rabbit/rabbit_use_ssl':        value => $::trove::rabbit_use_ssl;
       'oslo_messaging_rabbit/kombu_reconnect_delay': value => $::trove::kombu_reconnect_delay;
+      # TODO(shaikapsar): remove this line once bug/1486319 merged to stable/liberty.
+      'oslo_messaging_rabbit/amqp_durable_queues':   value => $::trove::amqp_durable_queues;
     }
 
     if $::trove::rabbit_use_ssl {
@@ -333,29 +370,32 @@ class trove::api(
     }
   }
 
-  if $::trove::rpc_backend == 'trove.openstack.common.rpc.impl_qpid' {
+  if $::trove::rpc_backend == 'trove.openstack.common.rpc.impl_qpid' or $::trove::rpc_backend == 'qpid'{
+
+    warning('Qpid driver is removed from Oslo.messaging in the Mitaka release')
+
     trove_config {
-      'DEFAULT/qpid_hostname':               value => $::trove::qpid_hostname;
-      'DEFAULT/qpid_port':                   value => $::trove::qpid_port;
-      'DEFAULT/qpid_username':               value => $::trove::qpid_username;
-      'DEFAULT/qpid_password':               value => $::trove::qpid_password, secret => true;
-      'DEFAULT/qpid_heartbeat':              value => $::trove::qpid_heartbeat;
-      'DEFAULT/qpid_protocol':               value => $::trove::qpid_protocol;
-      'DEFAULT/qpid_tcp_nodelay':            value => $::trove::qpid_tcp_nodelay;
+      'oslo_messaging_qpid/qpid_hostname':               value => $::trove::qpid_hostname;
+      'oslo_messaging_qpid/qpid_port':                   value => $::trove::qpid_port;
+      'oslo_messaging_qpid/qpid_username':               value => $::trove::qpid_username;
+      'oslo_messaging_qpid/qpid_password':               value => $::trove::qpid_password, secret => true;
+      'oslo_messaging_qpid/qpid_heartbeat':              value => $::trove::qpid_heartbeat;
+      'oslo_messaging_qpid/qpid_protocol':               value => $::trove::qpid_protocol;
+      'oslo_messaging_qpid/qpid_tcp_nodelay':            value => $::trove::qpid_tcp_nodelay;
     }
     if is_array($::trove::qpid_sasl_mechanisms) {
       trove_config {
-        'DEFAULT/qpid_sasl_mechanisms': value => join($::trove::qpid_sasl_mechanisms, ' ');
+        'oslo_messaging_qpid/qpid_sasl_mechanisms': value => join($::trove::qpid_sasl_mechanisms, ' ');
       }
     }
     elsif $::trove::qpid_sasl_mechanisms {
       trove_config {
-        'DEFAULT/qpid_sasl_mechanisms': value => $::trove::qpid_sasl_mechanisms;
+        'oslo_messaging_qpid/qpid_sasl_mechanisms': value => $::trove::qpid_sasl_mechanisms;
       }
     }
     else {
       trove_config {
-        'DEFAULT/qpid_sasl_mechanisms': ensure => absent;
+        'oslo_messaging_qpid/qpid_sasl_mechanisms': ensure => absent;
       }
     }
   }

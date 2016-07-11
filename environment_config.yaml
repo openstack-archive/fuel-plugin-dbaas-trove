@@ -1,11 +1,104 @@
-attributes: 
-  metadata: 
-    label: "Trove Service" 
-    weight: 90
-    db_password:
-      generator: "password"
-    user_password:
-      generator: "password"
-    rabbit_password:
-      generator: "password"
-    rabbit_user: "trove"
+attributes:
+  metadata:
+    # Settings group can be one of "general", "security", "compute", "network",
+    # "storage", "logging", "openstack_services" and "other".
+    group: 'openstack_services'
+    label: "Trove Settings"
+
+  auth_name:
+    value: 'trove'
+    label: 'Auth Username'
+    description: ''
+    weight: 20
+    type: "text"
+    regex:
+      source: '^[\S]{4,}$'
+      error: "Username length should not be less than 4 characters"
+    restrictions:
+      - action: hide
+        condition: settings:fuel-plugin-dbaas-trove.metadata.enabled == false
+
+  auth_password:
+    label: 'Auth Password'
+    description: ''
+    weight: 21
+    type: 'password'
+    value: 'NN2eNK27rPLQM2cf2JrNPnwc'
+    regex:
+      source: '^[\S]{8,}$'
+      error: "Password length should not be less than 8 characters"
+    restrictions:
+      - action: hide
+        condition: settings:fuel-plugin-dbaas-trove.metadata.enabled == false
+
+  db_password:
+    label: 'Database Password'
+    description: ''
+    weight: 22
+    type: 'password'
+    value: 'nupTgLU9a6SyFCBnsMfYH7Ag'
+    regex:
+      source: '^[\S]{8,}$'
+      error: "Password length should not be less than 8 characters"
+    restrictions:
+      - action: hide
+        condition: settings:fuel-plugin-dbaas-trove.metadata.enabled == false
+
+  rabbit_user:
+    label: 'RabbitMQ Username'
+    description: ''
+    weight: 23
+    type: 'text'
+    value: 'trove'
+    regex:
+      source: '^[\S]{4,}$'
+      error: "Username length should not be less than 4 characters"
+    restrictions:
+      - action: hide
+        condition: settings:fuel-plugin-dbaas-trove.metadata.enabled == false  
+
+  rabbit_password:
+    label: 'RabbitMQ Password'
+    description: ''
+    weight: 24
+    type: 'password'
+    value: '9sk9rWwXWbZnxmBFfhGtrGfP'
+    regex:
+      source: '^[\S]{8,}$'
+      error: "Password length should not be less than 8 characters"
+    restrictions:
+      - action: hide
+        condition: settings:fuel-plugin-dbaas-trove.metadata.enabled == false
+
+  rabbit_port:
+    value: "55671"
+    label: "RabbitMQ Port"
+    description: ""
+    weight: 25
+    type: "text"
+    restrictions:
+      - action: hide
+        condition: settings:fuel-plugin-dbaas-trove.metadata.enabled == false
+    regex:
+      source: '^(102[4-9]|10[3-9]\d|1[1-9]\d{2}|[2-9]\d{3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$'
+      error: "Invalid Port, Enter a port between 1024 and 65535"
+
+  rabbit_use_ssl:
+    value: false
+    label: "RabbitMQ SSL"
+    description: "Trove Guest agents communicate with RabbitMQ over SSL Connection"
+    weight: 26
+    type: "checkbox"
+    restrictions:
+      - action: hide
+        condition: settings:fuel-plugin-dbaas-trove.metadata.enabled == false
+
+  use_nova_server_config_drive :
+    value: true
+    label: "Nova Server Config Drive"
+    description: "Trove Task manager will use nova BOOT option to Inject the guest agent configuration files when booting guest instance"
+    weight: 27
+    type: "checkbox"
+    restrictions:
+      - action: hide
+        condition: settings:fuel-plugin-dbaas-trove.metadata.enabled == false
