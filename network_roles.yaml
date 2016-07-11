@@ -9,3 +9,7 @@
     gateway: true
     # List of VIPs to be allocated
     vip: []
+         # Unique VIP name
+         # - name: "vip_name"
+         # Optional linux namespace for VIP
+         # namespace: "haproxy"
