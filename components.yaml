@@ -1,0 +1,8 @@
+- name: additional_service:fuel-plugin-dbaas-trove
+  compatible: []
+  requires: []
+  incompatible: []
+  label: "Install Trove"
+  description: |
+      Trove provides scalable and reliable cloud Database as a Service provisioning
+       functionality for both relational and non-relational database engines.
