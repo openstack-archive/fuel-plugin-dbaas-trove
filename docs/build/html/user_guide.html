@@ -1,0 +1,182 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>User Guide &mdash; OpenStack Trove plugin for Fuel 1.0-1.0.3-1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0-1.0.3-1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="OpenStack Trove plugin for Fuel 1.0-1.0.3-1 documentation" href="index.html" />
+    <link rel="prev" title="Installation Guide" href="installation_guide.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="installation_guide.html" title="Installation Guide"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">OpenStack Trove plugin for Fuel 1.0-1.0.3-1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="user-guide">
+<span id="id1"></span><h1>User Guide<a class="headerlink" href="#user-guide" title="Permalink to this headline">¶</a></h1>
+<ol class="arabic">
+<li><p class="first">After the plugin is installed, <a class="reference external" href="https://docs.mirantis.com/openstack/fuel/fuel-8.0/fuel-user-guide.html#create-a-new-openstack-environment">create a new OpenStack environment</a> <a class="footnote-reference" href="#id2" id="id3">[1]</a>.</p>
+</li>
+<li><p class="first">Open the Settings tab of the Fuel web UI and then select the OpenStack
+Services menu. Select &#8220;Trove Setting&#8221; checkbox.</p>
+<img alt="_images/enable_plugin.png" src="_images/enable_plugin.png" />
+</li>
+<li><p class="first">Go to the Nodes tab and here push Add Nodes button</p>
+<img alt="_images/nodes_tab.png" src="_images/nodes_tab.png" />
+<p>Note that now Trove role is available in the roles list.</p>
+</li>
+<li><p class="first">Add nodes to the environment with RabbitMQ role assigned to some of them.
+On the screenshot below you may see environment with 1 controller, 1 compute
+and one Trove node. You can assign Trove role to more than one
+node.</p>
+<img alt="_images/env_nodes.png" src="_images/env_nodes.png" />
+</li>
+<li><p class="first">Finish <a class="reference external" href="http://docs.mirantis.com/openstack/fuel/fuel-8.0/fuel-user-guide.html#configure-your-environment">configuring your environment</a> <a class="footnote-reference" href="#id4" id="id5">[2]</a>.</p>
+</li>
+<li><p class="first"><a class="reference external" href="http://docs.mirantis.com/openstack/fuel/fuel-8.0/fuel-user-guide.html#deploy-changes">Deploy your environment</a> <a class="footnote-reference" href="#id6" id="id7">[3]</a>.</p>
+</li>
+</ol>
+<div class="section" id="how-it-works">
+<h2>How it works<a class="headerlink" href="#how-it-works" title="Permalink to this headline">¶</a></h2>
+<p>With the plugin enabled, Fuel deployes RabbitMQ and Trove Services on Trove
+nodes and here RabbitMQ is also managed by Pacemaker. Also note that two
+separate Pacemaker clusters are running on Controller and Trove nodes and
+they are not aware of each other.</p>
+<dl class="docutils">
+<dt>The Trove service logs could be found at :</dt>
+<dd><ul class="first last simple">
+<li>on Trove node in /var/log/trove directory</li>
+</ul>
+</dd>
+<dt>When the plugin is enabled, RabbitMQ log could be found in its regular place:</dt>
+<dd><ul class="first last simple">
+<li>on RabbitMQ node in /var/log/rabbitmq directory</li>
+<li>on master node in /var/log/remote/&lt;node-name&gt;/rabbitmq-*.log files</li>
+</ul>
+</dd>
+<dt>The same applies to log of Pacemaker which manages RabbitMQ. Its location is:</dt>
+<dd><ul class="first last simple">
+<li>on RabbitMQ node /var/log/pacemaker.log</li>
+<li>on master node in the following files:<ul>
+<li>/var/log/remote/&lt;node-name&gt;/attrd.log</li>
+<li>/var/log/remote/&lt;node-name&gt;/crmd.log</li>
+<li>/var/log/remote/&lt;node-name&gt;/cib.log</li>
+<li>/var/log/remote/&lt;node-name&gt;/lrmd.log</li>
+<li>/var/log/remote/&lt;node-name&gt;/pengine.log</li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+<table class="docutils footnote" frame="void" id="id2" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id3">[1]</a></td><td><a class="reference external" href="https://docs.mirantis.com/openstack/fuel/fuel-8.0/fuel-user-guide.html#create-a-new-openstack-environment">https://docs.mirantis.com/openstack/fuel/fuel-8.0/fuel-user-guide.html#create-a-new-openstack-environment</a></td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id4" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id5">[2]</a></td><td><a class="reference external" href="http://docs.mirantis.com/openstack/fuel/fuel-8.0/fuel-user-guide.html#configure-your-environment">http://docs.mirantis.com/openstack/fuel/fuel-8.0/fuel-user-guide.html#configure-your-environment</a></td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id6" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id7">[3]</a></td><td><a class="reference external" href="http://docs.mirantis.com/openstack/fuel/fuel-8.0/fuel-user-guide.html#deploy-changes">http://docs.mirantis.com/openstack/fuel/fuel-8.0/fuel-user-guide.html#deploy-changes</a></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">User Guide</a><ul>
+<li><a class="reference internal" href="#how-it-works">How it works</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="installation_guide.html"
+                        title="previous chapter">Installation Guide</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/user_guide.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="installation_guide.html" title="Installation Guide"
+             >previous</a> |</li>
+        <li><a href="index.html">OpenStack Trove plugin for Fuel 1.0-1.0.3-1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2016, AT&amp;T Services, Inc..
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

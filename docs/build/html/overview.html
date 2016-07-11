@@ -1,0 +1,174 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Document purpose &mdash; OpenStack Trove plugin for Fuel 1.0-1.0.3-1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0-1.0.3-1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="OpenStack Trove plugin for Fuel 1.0-1.0.3-1 documentation" href="index.html" />
+    <link rel="next" title="Installation Guide" href="installation_guide.html" />
+    <link rel="prev" title="Welcome to OpenStack Trove plugin for Fuel’s documentation!" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="installation_guide.html" title="Installation Guide"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to OpenStack Trove plugin for Fuel’s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">OpenStack Trove plugin for Fuel 1.0-1.0.3-1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="document-purpose">
+<span id="overview"></span><h1>Document purpose<a class="headerlink" href="#document-purpose" title="Permalink to this headline">¶</a></h1>
+<p>This document provides instructions for installing, configuring and using
+OpenStack Trove plugin for Fuel.</p>
+<div class="section" id="openstack-trove-plugin">
+<h2>OpenStack Trove plugin<a class="headerlink" href="#openstack-trove-plugin" title="Permalink to this headline">¶</a></h2>
+<p>The OpenStack Trove plugin provides ability to install an OpenStack
+environment with Trove deployed on dedicated nodes. Trove provides
+scalable and reliable Cloud Database as a Service provisioning functionality
+for both relational and non-relational database engines, and to continue to
+improve its fully-featured and extensible open source framework.</p>
+<p>Plugin is hot-pluggable and It can be enabled in a new environment or existing
+deployed environment without the plugin.</p>
+</div>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="58%" />
+<col width="42%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Requirement</th>
+<th class="head">Version/Comment</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Fuel</td>
+<td>8.0 release</td>
+</tr>
+<tr class="row-odd"><td>OpenStack compatibility</td>
+<td>Liberty</td>
+</tr>
+<tr class="row-even"><td>Operating systems</td>
+<td>Ubuntu 14.04 LTS</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="limitations">
+<h2>Limitations<a class="headerlink" href="#limitations" title="Permalink to this headline">¶</a></h2>
+<p>OpenStack Trove plugin deploys a dedicated RabbitMQ Cluster on Trove nodes for
+for security reasons.
+<a class="reference external" href="http://lists.openstack.org/pipermail/openstack-dev/2015-April/061759.html/">Dedicated RabbitMQ</a>.</p>
+<p>If the OpenStack Trove plugin is enabled for an environment, it is impossible
+to assign Trove and Controller roles to the same node.</p>
+<p>There is a Detach RabbitMQ plugin, which enable user to install RabbitMQ
+on separate nodes. Detach RabbitMQ plugin role should not be used together
+with Trove plugin role, User should ensure that:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Trove and RabbitMQ roles shoud not to be assigned to the same nodes</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Document purpose</a><ul>
+<li><a class="reference internal" href="#openstack-trove-plugin">OpenStack Trove plugin</a></li>
+<li><a class="reference internal" href="#requirements">Requirements</a></li>
+<li><a class="reference internal" href="#limitations">Limitations</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Welcome to OpenStack Trove plugin for Fuel&#8217;s documentation!</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="installation_guide.html"
+                        title="next chapter">Installation Guide</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/overview.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="installation_guide.html" title="Installation Guide"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to OpenStack Trove plugin for Fuel’s documentation!"
+             >previous</a> |</li>
+        <li><a href="index.html">OpenStack Trove plugin for Fuel 1.0-1.0.3-1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2016, AT&amp;T Services, Inc..
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

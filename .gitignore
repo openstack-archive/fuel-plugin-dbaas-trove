@@ -1,0 +1,5 @@
+.tox
+.build
+*.pyc
+fuel-plugin-dbaas-trove-*.rpm
+repositories/ubuntu/*.deb
