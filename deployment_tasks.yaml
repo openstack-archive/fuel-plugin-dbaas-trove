@@ -1,84 +1,222 @@
+
 # These tasks will be merged into deployment graph. Here you
 # can specify new tasks for any roles, even built-in ones.
+
+- id: primary-trove
+  type: group
+  role: [primary-trove]
+  requires: [deploy_start]
+  required_for: [deploy_end]
+  tasks: &common_tasks
+    - hiera
+    - setup_repositories
+    - fuel_pkgs
+    - globals
+    - tools
+    - logging
+    - netconfig
+    - hosts
+    - firewall
+    - ssl-keys-saving
+    - ssl-add-trust-chain
+    - ssl-dns-setup
+  parameters:
+    strategy:
+      type: one_by_one
 
 - id: trove
   type: group
   role: [trove]
-  requires: [deploy_start]
+  requires: [primary-trove]
   required_for: [deploy_end]
-  tasks: 
-    - fuel_pkgs
-    - hiera
-    - globals
-    - logging
-    - tools
-    - netconfig
-    - hosts
-    - firewall
+  tasks: *common_tasks
   parameters:
     strategy:
       type: parallel
 
-- id: trove-haproxy
+- id: hiera-trove-override
+  version: 2.0.0
   type: puppet
-  groups: ['primary-controller', 'controller']
-  required_for: [task-trove, deploy_end]
-  requires: [deploy_start, cluster-haproxy]
+  groups: [primary-trove, trove]
+  requires: [globals]
+  required_for: [logging, trove-service]
+  cross-depends:
+    - name: globals
   parameters:
-    puppet_manifest: puppet/manifests/haproxy.pp
-    puppet_modules: puppet/modules:/etc/puppet/modules
-    timeout: 1800
+    puppet_manifest: puppet/modules/dbaas_trove/modular/trove_hiera_override.pp
+    puppet_modules: /etc/puppet/modules:puppet/modules
+    timeout: 3600
 
-- id: task-trove-db
+- id: trove-firewall
+  version: 2.0.0
   type: puppet
-  groups: ['primary-controller', 'controller']
-  required_for: [task-trove]
-  requires: [database]
+  groups: [primary-trove, trove]
+  requires: [hiera-trove-override, firewall]
+  required_for: [trove-cluster]
+  cross-depends:
+    - name: hiera-trove-override
+    - name: firewall
   parameters:
-    puppet_manifest: puppet/manifests/db.pp
+    puppet_manifest: puppet/modules/dbaas_trove/modular/firewall.pp
+    puppet_modules: /etc/puppet/modules:puppet/modules
+    timeout: 3600
+
+- id: trove-ssl-keys-saving
+  version: 2.0.0
+  type: puppet
+  groups: [*]
+  requires: [trove-firewall, ssl-keys-saving]
+  cross-depends:
+    - name: trove-firewall
+    - name: ssl-keys-saving
+  condition: "(settings:public_ssl.horizon.value == true or settings:public_ssl.services.value == true) and settings:public_ssl.cert_source.value == 'user_uploaded'"
+  required_for: [deploy_end]
+  parameters:
+    puppet_manifest: puppet/modules/dbaas_trove/modular/ssl_keys_saving.pp
+    puppet_modules: /etc/puppet/modules:puppet/modules
+    timeout: 3600
+  # reexecute_on is needed for scale-down operations
+  reexecute_on:
+    - deploy_changes
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/ssl/ssl_keys_saving_pre.rb
+
+- id: trove-ssl-add-trust-chain
+  type: puppet
+  version: 2.0.0
+  groups: [*]
+  requires: [trove-firewall, trove-ssl-keys-saving]
+  cross-depends:
+    - name: trove-firewall
+    - name: trove-ssl-keys-saving
+  condition: "settings:public_ssl.horizon.value == true or settings:public_ssl.services.value == true"
+  required_for: [hosts]
+  parameters:
+    puppet_manifest: puppet/modules/dbaas_trove/modular/ssl_add_trust_chain.pp
+    puppet_modules: /etc/puppet/modules:puppet/modules
+    timeout: 3600
+  # reexecute_on is needed for scale-down operations
+  reexecute_on:
+    - deploy_changes
+  test_pre:
+    cmd: ruby /etc/puppet/modules/osnailyfacter/modular/ssl/ssl_keys_saving_pre.rb
+
+- id: trove-ssl-dns-setup
+  type: puppet
+  version: 2.0.0
+  groups: [primary-controller, controller]
+  requires: [trove-firewall, trove-ssl-add-trust-chain]
+  cross-depends:
+    - name: trove-firewall
+    - name: trove-ssl-add-trust-chain
+  condition: "settings:public_ssl.horizon.value == true or settings:public_ssl.services.value == true"
+  required_for: [hosts]
+  parameters:
+    puppet_manifest: puppet/modules/dbaas_trove/modular/ssl_dns_setup.pp
+    puppet_modules: /etc/puppet/modules:puppet/modules
+  timeout: 3600
+  # reexecute_on is needed for scale-down operations
+  reexecute_on:
+    - deploy_changes
+
+- id: trove-cluster
+  version: 2.0.0
+  type: puppet
+  groups: [primary-trove, trove]
+  requires: [hosts, trove-firewall, hiera-trove-override]
+  required_for: [trove-rabbitmq]
+  cross-depends:
+    - name: hosts
+    - name: trove-firewall
+    - name: hiera-trove-override
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/cluster/cluster.pp
     puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 3600
+  # reexecute_on is needed for scale-down operations
+  reexecute_on:
+    - deploy_changes
+
+- id: trove-rabbitmq
+  version: 2.0.0
+  type: puppet
+  groups: [primary-trove, trove]
+  requires: [trove-firewall, trove-cluster, hiera-trove-override]
+  required_for: [trove-service]
+  cross-depends:
+   - name: trove-firewall
+   - name: hiera-trove-override
+   - name: trove-cluster
+  parameters:
+    puppet_manifest: /etc/puppet/modules/osnailyfacter/modular/rabbitmq/rabbitmq.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 3600
+  # reexecute_on is needed for scale-down operations
+  reexecute_on:
+    - deploy_changes
+
+- id: trove-db
+  version: 2.0.0
+  type: puppet
+  groups: [primary-controller]
+  requires: [primary-database, database]
+  required_for: [trove-service]
+  cross-depends:
+   - name: /(primary-)?database/
+  parameters:
+    puppet_manifest: puppet/modules/dbaas_trove/modular/db.pp
+    puppet_modules: /etc/puppet/modules:puppet/modules
     timeout: 1800
+  # reexecute_on is needed for scale-down operations
+  reexecute_on:
+    - deploy_changes
 
 - id: trove-keystone
+  version: 2.0.0
   type: puppet
-  groups: ['primary-controller', 'controller']
-  required_for: [task-trove]
-  requires: [keystone]
+  groups: [primary-controller]
+  requires: [primary-keystone, keystone]
+  required_for: [trove-service]
+  cross-depends:
+    - name: /(primary-)?keystone/
   parameters:
-    puppet_manifest: puppet/manifests/keystone.pp
-    puppet_modules: puppet/modules:/etc/puppet/modules
+    puppet_manifest: puppet/modules/dbaas_trove/modular/keystone.pp
+    puppet_modules: /etc/puppet/modules:puppet/modules
     timeout: 1800
+  # reexecute_on is needed for scale-down operations
+  reexecute_on:
+    - deploy_changes
 
-- id: task-trove
+- id: openstack-haproxy-trove
   type: puppet
-  groups: [trove]
+  version: 2.0.0
+  groups: [primary-controller, controller]
+  requires: [primary-cluster-haproxy, cluster-haproxy]
+  required_for: [trove-service]
+  cross-depends:
+    - name: /(primary-)?cluster-haproxy/
+  parameters:
+    puppet_manifest: puppet/modules/dbaas_trove/modular/openstack-haproxy-trove.pp
+    puppet_modules: /etc/puppet/modules:puppet/modules
+    timeout: 3600
+  # reexecute_on is needed for scale-down operations
+  reexecute_on:
+    - deploy_changes
+
+- id: trove-service
+  version: 2.0.0
+  type: puppet
+  groups: [primary-trove, trove]
+  requires: [trove-rabbitmq, trove-db, trove-keystone, openstack-haproxy-trove]
   required_for: [deploy_end]
-  requires: [rabbitmq, trove-haproxy, task-trove-db, trove-keystone, task-rabbitmq]
+  cross-depends:
+    - name: trove-rabbitmq
+    - name: trove-db
+    - name: trove-keystone
+    - name: openstack-haproxy-trove
+  cross-depended-by:
+   - name: deploy_end
   parameters:
-    puppet_manifest: puppet/manifests/trove.pp
-    puppet_modules: puppet/modules:/etc/puppet/modules
-    timeout: 1800
-
-##############################################
-# RabbitMQ and Cluster
-
-# Deployment tasks
-- id: task-rabbitmq
-  type: puppet
-  groups: [trove]
-  requires: [task-rabbitmq-cluster]
-  required_for: [task-trove]
-  parameters:
-    puppet_manifest: puppet/manifests/rabbitmq.pp
-    puppet_modules: puppet/modules:/etc/puppet/modules
-    timeout: 1800
-
-- id: task-rabbitmq-cluster
-  type: puppet
-  groups: [trove]
-  requires: [hosts, firewall, deploy_start]
-  required_for: [task-rabbitmq]
-  parameters:
-    puppet_manifest: puppet/manifests/cluster.pp
-    puppet_modules: puppet/modules:/etc/puppet/modules
+    puppet_manifest: puppet/modules/dbaas_trove/modular/trove.pp
+    puppet_modules: /etc/puppet/modules:puppet/modules
     timeout: 1800
