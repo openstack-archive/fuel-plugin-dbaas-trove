@@ -1,0 +1,10 @@
+Code-Review+1: Pundaleek P Belamge <Pundaleek.Belamge@intl.att.com>
+Code-Review+1: Venkata Mahesh Jonnalagadda <Venkata.Jonnalagadda@intl.att.com>
+Code-Review+2: Bhaskar Duvvuri <bhaskara.duvvuri@intl.att.com>
+Workflow+1: Bhaskar Duvvuri <bhaskara.duvvuri@intl.att.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 05 Oct 2016 14:32:19 +0000
+Reviewed-on: https://review.openstack.org/327261
+Project: openstack/fuel-plugin-dbaas-trove
+Branch: refs/heads/master
