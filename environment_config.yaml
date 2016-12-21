@@ -6,7 +6,7 @@ attributes:
     label: "Trove Settings"
 
   auth_name:
-    value: 'trove'
+    value: ''
     label: 'Auth Username'
     description: ''
     weight: 20
@@ -23,7 +23,7 @@ attributes:
     description: ''
     weight: 21
     type: 'password'
-    value: 'NN2eNK27rPLQM2cf2JrNPnwc'
+    value: ''
     regex:
       source: '^[\S]{8,}$'
       error: "Password length should not be less than 8 characters"
@@ -36,7 +36,7 @@ attributes:
     description: ''
     weight: 22
     type: 'password'
-    value: 'nupTgLU9a6SyFCBnsMfYH7Ag'
+    value: ''
     regex:
       source: '^[\S]{8,}$'
       error: "Password length should not be less than 8 characters"
@@ -49,7 +49,7 @@ attributes:
     description: ''
     weight: 23
     type: 'text'
-    value: 'trove'
+    value: ''
     regex:
       source: '^[\S]{4,}$'
       error: "Username length should not be less than 4 characters"
@@ -62,7 +62,7 @@ attributes:
     description: ''
     weight: 24
     type: 'password'
-    value: '9sk9rWwXWbZnxmBFfhGtrGfP'
+    value: ''
     regex:
       source: '^[\S]{8,}$'
       error: "Password length should not be less than 8 characters"
@@ -71,7 +71,7 @@ attributes:
         condition: settings:fuel-plugin-dbaas-trove.metadata.enabled == false
 
   rabbit_port:
-    value: "55671"
+    value: ""
     label: "RabbitMQ Port"
     description: ""
     weight: 25
