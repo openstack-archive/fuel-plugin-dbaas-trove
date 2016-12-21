@@ -1,0 +1,8 @@
+Code-Review+2: Bhaskar Duvvuri <bhaskara.duvvuri@intl.att.com>
+Workflow+1: Bhaskar Duvvuri <bhaskara.duvvuri@intl.att.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 21 Dec 2016 13:25:31 +0000
+Reviewed-on: https://review.openstack.org/413610
+Project: openstack/fuel-plugin-dbaas-trove
+Branch: refs/heads/master
