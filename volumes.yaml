@@ -1,7 +1,0 @@
-volumes_roles_mapping:
-  # Default role mapping
-  trove:
-    - {allocate_size: "min", id: "os"}
-    - {allocate_size: "min", id: "logs"}
-# Set here new volumes for your role
-volumes: []
